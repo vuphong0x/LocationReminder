@@ -125,6 +125,11 @@ class RemindersActivityTest {
         onView(withId(com.google.android.material.R.id.snackbar_text))
             .check(matches(withText(R.string.geofences_added)))
 
+        //TODO: Toast message assertions not working with android 11 and target sdk 30 and higher
+        // https://github.com/android/android-test/issues/803
+//        onView(withText(R.string.reminder_saved)).inRoot(withDecorView(not(`is`(getActivity(activityScenario)?.window?.decorView))))
+//            .check(matches(isDisplayed()))
+
         activityScenario.close()
     }
 
