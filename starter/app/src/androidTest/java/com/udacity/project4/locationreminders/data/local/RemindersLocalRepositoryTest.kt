@@ -85,9 +85,10 @@ class RemindersLocalRepositoryTest {
 
     @Test
     fun getReminderById_notExitReminder() = runTest {
-        val result = repository.getReminder("Fake ID") as Result.Error
+        val result = repository.getReminder("Fake ID")
 
-        assertThat(result, `is`(true))
+        assertThat(result is Result.Error, `is`(true))
+        result as Result.Error
         assertThat(result.message, `is`("Reminder not found!"))
     }
 

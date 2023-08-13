@@ -23,7 +23,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.hamcrest.core.IsNot.not
-import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -49,6 +48,7 @@ class ReminderListFragmentTest {
 //    TODO: add testing for the error messages.
     @Before
     fun init() {
+        stopKoin()
         appContext = getApplicationContext()
         val myModule = module {
             viewModel {
@@ -57,10 +57,9 @@ class ReminderListFragmentTest {
                     get() as ReminderDataSource
                 )
             }
-            single { RemindersLocalRepository(get()) }
+            single { RemindersLocalRepository(get()) as ReminderDataSource }
             single { LocalDB.createRemindersDao(appContext) }
         }
-
         startKoin {
             modules(myModule)
         }
@@ -70,11 +69,6 @@ class ReminderListFragmentTest {
         runBlocking {
             repository.deleteAllReminders()
         }
-    }
-
-    @After
-    fun cleanUp() {
-        stopKoin()
     }
 
     @Test
