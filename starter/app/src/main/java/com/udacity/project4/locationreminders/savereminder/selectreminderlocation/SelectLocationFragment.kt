@@ -51,18 +51,10 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     private var requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        when {
-            permissions.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false) -> {
-                Log.d(TAG, "Precise location access granted")
-            }
-
-            permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false) -> {
-                Log.d(TAG, "Only approximate location access granted")
-            }
-
-            else -> {
-                Log.d(TAG, "No location access granted")
-            }
+        if (permissions.all { it.value }) {
+            enableMyLocation()
+        } else {
+            showMessageRequirePermission()
         }
     }
 
@@ -113,8 +105,9 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     private fun isPermissionGranted(): Boolean {
         return ContextCompat.checkSelfPermission(
-            requireActivity(),
-            Manifest.permission.ACCESS_FINE_LOCATION
+            requireContext(), Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
+            requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
     }
 
@@ -123,16 +116,16 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         if (isPermissionGranted()) {
             map?.isMyLocationEnabled = true
         } else {
-            requestPermissionLauncher.launch(arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ))
+            requestPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
 
             // Show snack bar request location permission
             Snackbar.make(
-                requireView(),
-                R.string.permission_denied_explanation,
-                Snackbar.LENGTH_SHORT
+                requireView(), R.string.permission_denied_explanation, Snackbar.LENGTH_SHORT
             ).setAction(R.string.settings) {
                 startActivity(Intent().apply {
                     action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
@@ -185,6 +178,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                     R.id.terrain_map -> {
                         map?.mapType = GoogleMap.MAP_TYPE_TERRAIN
                     }
+
                     android.R.id.home -> {
                         requireActivity().onBackPressedDispatcher.onBackPressed()
                     }
@@ -205,9 +199,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
             currentMarker?.remove()
             currentMarker = map.addMarker(
-                MarkerOptions()
-                    .position(latLng)
-                    .title(getString(R.string.dropped_pin))
+                MarkerOptions().position(latLng).title(getString(R.string.dropped_pin))
                     .snippet(snippet)
             )
         }
@@ -216,9 +208,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     private fun setPoiClick(map: GoogleMap?) {
         map?.setOnPoiClickListener { poi ->
             currentMarker = map.addMarker(
-                MarkerOptions()
-                    .position(poi.latLng)
-                    .title(poi.name)
+                MarkerOptions().position(poi.latLng).title(poi.name)
             )
             currentMarker?.showInfoWindow()
         }
@@ -228,14 +218,25 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         try {
             val success = map?.setMapStyle(
                 MapStyleOptions.loadRawResourceStyle(
-                    requireContext(),
-                    R.raw.map_style
+                    requireContext(), R.raw.map_style
                 )
             )
             if (success == false) Log.e(TAG, "Style parsing failed.")
         } catch (e: Resources.NotFoundException) {
             Log.e(TAG, "Can't find style. Error: ", e)
         }
+    }
+
+    private fun showMessageRequirePermission() {
+        Snackbar.make(
+            requireView(), R.string.permission_denied_explanation, Snackbar.LENGTH_SHORT
+        ).setAction(R.string.settings) {
+            startActivity(Intent().apply {
+                action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                data = Uri.fromParts("package", BuildConfig.APPLICATION_ID, null)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            })
+        }.show()
     }
 
 }

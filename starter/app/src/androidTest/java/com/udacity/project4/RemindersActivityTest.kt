@@ -11,6 +11,7 @@ import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.longClick
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.RootMatchers.withDecorView
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
@@ -28,6 +29,8 @@ import com.udacity.project4.util.monitorActivity
 import com.udacity.project4.utils.EspressoIdlingResource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.hamcrest.Matchers.`is`
+import org.hamcrest.Matchers.not
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -46,7 +49,13 @@ class RemindersActivityTest {
     private lateinit var repository: ReminderDataSource
     private lateinit var appContext: Application
     private val dataBindingIdlingResource = DataBindingIdlingResource()
-
+    private fun getActivityFromScenario(activityScenario: ActivityScenario<RemindersActivity>): Activity? {
+        var activity: Activity? = null
+        activityScenario.onActivity {
+            activity = it
+        }
+        return activity
+    }
     /**
      * As we use Koin as a Service Locator Library to develop our code, we'll also use Koin to test our code.
      * at this step we will initialize Koin related code to be able to use it in out testing.
@@ -127,8 +136,8 @@ class RemindersActivityTest {
 
         //TODO: Toast message assertions not working with android 11 and target sdk 30 and higher
         // https://github.com/android/android-test/issues/803
-//        onView(withText(R.string.reminder_saved)).inRoot(withDecorView(not(`is`(getActivity(activityScenario)?.window?.decorView))))
-//            .check(matches(isDisplayed()))
+        onView(withText(R.string.reminder_saved)).inRoot(withDecorView(not(`is`(getActivityFromScenario(activityScenario)?.window?.decorView))))
+            .check(matches(isDisplayed()))
 
         activityScenario.close()
     }
